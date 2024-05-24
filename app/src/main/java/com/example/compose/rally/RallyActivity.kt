@@ -12,8 +12,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.compose.rally.ui.components.RallyTabRow
 import com.example.compose.rally.ui.overview.OverviewScreen
@@ -36,12 +38,21 @@ class RallyActivity : ComponentActivity() {
 fun RallyApp() {
     RallyTheme {
         val navController = rememberNavController()
-        var currentScreen: RallyDestination by remember { mutableStateOf(Overview) }
+        val currentBackStack by navController.currentBackStackEntryAsState()
+        // Fetch your currentDestination:
+        val currentDestination = currentBackStack?.destination
+
+        // Change the variable to this and use Overview as a backup screen if this returns null
+        val currentScreen = rallyTabRowScreens.find { it.route == currentDestination?.route } ?: Overview
+
         Scaffold(
             topBar = {
                 RallyTabRow(
                     allScreens = rallyTabRowScreens,
-                    onTabSelected = { screen -> currentScreen = screen },
+                    onTabSelected = { newScreen ->
+                        navController
+                            .navigateSingleTopTo(newScreen.route)
+                    },
                     currentScreen = currentScreen
                 )
             }
@@ -64,3 +75,6 @@ fun RallyApp() {
         }
     }
 }
+
+fun NavHostController.navigateSingleTopTo(route: String) =
+    this.navigate(route) { launchSingleTop = true }
